@@ -6,7 +6,7 @@
 #define RANK_MASTER 0
 #define TAG_OPERATION 50
 
-int **getMatrix(int row, int col){
+int **allocMatrix(int row, int col){
 
     int **m = (int**)malloc(row*sizeof(int*));
     for (int i = 0; i<row;i++)
@@ -17,6 +17,30 @@ int **getMatrix(int row, int col){
             m[i][j] = 1;
         }
     }
+    return m;
+}
+
+int **readMatrix(const char *filename, int* row, int* col){
+
+    FILE *f;
+    f = fopen(filename, "r");
+
+    if(f==NULL)
+        exit (1);
+
+    fscanf(f, "%d %d", row, col);
+    printf("(%d, %d)\n", *row, *col);
+
+    int **m = (int**)malloc((*row)*sizeof(int*));
+    for (int i = 0; i<*row;i++)
+        m[i] = (int*)malloc((*col)*sizeof(int));
+
+    for(int i=0; i<*row; i++){
+        for (int j=0;j<*col;j++){
+            fscanf(f, "%d ", m[i]+j);
+        }
+    }
+    fclose(f)
     return m;
 }
 
@@ -42,7 +66,7 @@ int *multiplyVectorByMatrix(int *v, int size, int **m, int row, int col){
     return result;
 }
 
-int main(){
+int main(int argc, char const *argv[]){
 
     MPI_Init(NULL,NULL);
 
@@ -62,32 +86,12 @@ int main(){
     //---------Master Task------------
     if(world_rank == RANK_MASTER){
         int **matrix1, **matrix2, **result;
-        int col1 = 3, row1 = 3;
-        int row2 = 3, col2 = 3;
+        int col1, row1;
+        int row2, col2;
 
-        matrix1 = getMatrix(row1,col1);
-        matrix2 = getMatrix(row2,col2);
-        result = getMatrix(row1,col2);
-
-        matrix1[0][0] = 1;
-        matrix1[0][1] = 2;
-        matrix1[0][2] = 5;
-        matrix1[1][0] = 3;
-        matrix1[1][1] = 4;
-        matrix1[1][2] = 3;
-        matrix1[2][0] = 8;
-        matrix1[2][1] = 4;
-        matrix1[2][2] = 5;
-
-        matrix2[0][0] = 1;
-        matrix2[0][1] = 3;
-        matrix2[0][2] = 5;
-        matrix2[1][0] = 2;
-        matrix2[1][1] = 4;
-        matrix2[1][2] = 8;
-        matrix2[2][0] = 7;
-        matrix2[2][1] = 9;
-        matrix2[2][2] = 0;
+        matrix1 = readMatrix(argv[1], &row1,&col1);
+        matrix2 = readMatrix(argv[2], &row2,&col2);
+        result = allocMatrix(row1,col2);
 
 
         int aux = col1;
@@ -129,7 +133,7 @@ int main(){
         MPI_Recv(&row, 1, MPI_INT, RANK_MASTER, TAG_OPERATION, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         MPI_Recv(&col, 1, MPI_INT, RANK_MASTER, TAG_OPERATION, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
-        matrix2 = getMatrix(row,col);
+        matrix2 = allocMatrix(row,col);
 
         for(int i = 0; i<row;i++){
             MPI_Recv(&matrix2[i][0], col, MPI_INT, RANK_MASTER, TAG_OPERATION, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
