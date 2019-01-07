@@ -1,4 +1,3 @@
-//thiagombrodrigues@uft.edu.br
 #include <stdlib.h>
 #include <stdio.h>
 #include <mpi.h>
